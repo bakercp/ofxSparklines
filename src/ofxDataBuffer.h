@@ -7,230 +7,315 @@
 //
 #pragma once
 
-#include "ofMain.h"
+#include <vector>
 #include <set>
 
-class ofxAbstractDataBuffer{
+template<typename T>
+class ofxDataBuffer_ {
 public:
-	virtual ~ofxAbstractDataBuffer(){};
+    ofxDataBuffer_();
+    ofxDataBuffer_(size_t maxSize);
+    ofxDataBuffer_(const vector<T>& data);
+    ofxDataBuffer_(T* data, int length);
+	
+	virtual ~ofxDataBuffer_();
     
-};
-
-template<typename ParameterType>
-class ofxDataBuffer: public ofxAbstractDataBuffer{
-public:
-	ofxDataBuffer();
-	ofxDataBuffer(size_t v);
-	virtual ~ofxDataBuffer(){};
+    deque<T>& getBuffer();
     
-    void add(ParameterType v);
+    void push_back(const T& data,      bool expand = false);
+    void push_back(const vector<T>& v, bool expand = false);
+    void push_back(T* v, int length,   bool expand = false);
+ 
+    void   setMaxSize(size_t _maxSize);
+    size_t getMaxSize();
     
-    void setSize(size_t size) {count = size;}
-    size_t getSize()          {return count;}
+    size_t getSize();
     
-	ParameterType getMin();
-	ParameterType getMax();
+    // buffer statistics
+    void calcStats();
+    bool statsValid;
     
+    T      getMin();
+	T      getMax();
+    
+    double getSum();
+    double getProduct();
     double getMean();
-    double getMedian();
+    double getHarmonicMean();
+    double getGeometricMean();
     double getVariance();
     double getStdDev();
+    double getPopulationVariance();
+    double getPopulationStdDev();
+    
+    double getMedian();
+    
+protected:
 
-    //    ParameterType getHarmonicMean();
-    //    ParameterType getGeometricMean();
-    //    ParameterType getCorrectedVariance();
-    //    ParameterType getCorrectedStandardDeviation();
-    //    ParameterType getCoefficientOfVariation();
-    //    ParameterType getMeanDeviation();
-    //    ParameterType getMedianDeviation();
-    //    ParameterType getSkewness();
-    
-    
-    double smooth(double oldValue, ParameterType newValue, double alpha);
-    
-    void   setSmoothAlpha(double alpha) {smoothAlpha = alpha;}
-    double getAlpha()                   {return smoothAlpha;}
-    
-private:
-    deque<ParameterType>  buffer;
-    vector<ParameterType> bufferOrdered;
-    deque<double>         bufferSmoothed;
+    deque<T> buffer;
 
-    size_t count;
-
-    bool wasCaclulated;
-    void calcStats();
+    size_t maxSize;
 
     // statistics
     double sum;
-    double meanSum;
-    double stdDevSum;
+    double product;
     double variance;
+    double variancePopulation;
     
     double mean;
+    double harmMean;
+    double geoMean;
     double stdDev;
+    double stdDevPopulation;
     
-    double median;
-    
-    ParameterType minimum;
-    ParameterType maximum;
-    
-    double smoothAlpha;
+    T minimum;
+    T maximum;
     
 };
 
-template<typename ParameterType>
-ofxDataBuffer<ParameterType>::ofxDataBuffer(){
-    count = 100;
-    wasCaclulated = false;
-    smoothAlpha = 0.95;
+template<typename T>
+ofxDataBuffer_<T>::ofxDataBuffer_(){
+    maxSize        = 1;
+    statsValid     = false;
 }
 
-template<typename ParameterType>
-ofxDataBuffer<ParameterType>::ofxDataBuffer(size_t v){
-    count = v;
-    wasCaclulated = false;
-    smoothAlpha = 0.95;
+template<typename T>
+ofxDataBuffer_<T>::ofxDataBuffer_(size_t _maxSize){
+    maxSize        = _maxSize;
+    statsValid     = false;
 }
 
-template<typename ParameterType>
-void ofxDataBuffer<ParameterType>::calcStats(){
+template<typename T>
+ofxDataBuffer_<T>::ofxDataBuffer_(const vector<T>& data){
+    maxSize        = data.size();
+    statsValid     = false;
+    push_back(data,true);
+}
+
+template<typename T>
+ofxDataBuffer_<T>::ofxDataBuffer_(T* data, int length){
+    maxSize        = length;
+    statsValid     = false;
+    push_back(data,length,true);
+}
+
+template<typename T>
+ofxDataBuffer_<T>::~ofxDataBuffer_(){}
+
+
+template<typename T>
+deque<T>& ofxDataBuffer_<T>::getBuffer(){
+    return buffer;
+}
+
+template<typename T>
+void ofxDataBuffer_<T>::calcStats(){
     
-    if(wasCaclulated) {
+    if(statsValid) {
         return;
     } else {
-        wasCaclulated = true;
+        statsValid = true;
     }
     
-    sum                = 0.0;
-    meanSum            = 0.0;
-    stdDevSum          = 0.0;
-    variance           = 0.0;
-    
-    mean               = 0.0;
-    stdDev             = 0.0;
-    
-    minimum            =  numeric_limits<ParameterType>::max();
-    maximum            = -numeric_limits<ParameterType>::max();
+    sum         = 0.0;
+    product     = 0.0;
+    variance    = 0.0;
+    mean        = 0.0;
+    harmMean    = 0.0;
+    geoMean     = 0.0;
+    stdDev      = 0.0;
+    minimum     = 0.0;
+    maximum     = 0.0;
+
     
     if(buffer.empty()) return;
     
-    int cnt = buffer.size();
-    for(int i = 0; i < cnt; ++i) {
+    bool hasNegativeValues = false;
+    
+    int    n      = 0;
+    double delta  = 0.0;
+    double M2     = 0.0;
+    double invSum = 0.0;
+    
+    for(size_t i = 0; i < buffer.size(); ++i) {
+        T         value = buffer[i];
+        double invValue = 1.0 / value;
+        if(value < 0) hasNegativeValues = true;
+
+        n = n+1;
+        
         if(i == 0) {
-            meanSum = buffer[i];
+            sum       = value;
+            product   = value;
+            invSum    = invValue;
+            minimum   = value;
+            maximum   = value;
         } else {
-            double stepSum = buffer[i] - meanSum;
-            double stepMean = ((i - 1) * stepSum) / i;
-            meanSum   += (stepMean);
-            stdDevSum += (stepMean * stepSum);
+            sum      += value;
+            product  *= value;
+            invSum   += invValue;
+            minimum  = MIN(minimum, value);
+            maximum  = MAX(maximum, value);
         }
+
         
-        sum += buffer[i];
-        
-        minimum = MIN(minimum, buffer[i]);
-        maximum = MAX(maximum, buffer[i]);
-        
-        cout << buffer[i] << " << buff" << endl;
-        
+        delta = value - mean;
+        mean  = mean + delta/n;
+        M2    = M2 + delta * (value - mean);
+
     }
     
-    
-    cout << "minimum=" << minimum << endl;
-    cout << "maximum=" << maximum << endl;
-    
-    cout << " sum: " << sum << " - " << cnt << endl;
-    
-    mean               = sum / cnt;
-    cout << "mean=" << mean << endl;
-    
-    variance           = stdDevSum / (cnt - 1);
+    harmMean           = hasNegativeValues ? -1 : (n / invSum);
+    geoMean            = hasNegativeValues ? -1 : pow(product, 1.0 / n);
+
+    variancePopulation = M2 / (n);
+    variance           = M2 / (n - 1);
+
+    stdDevPopulation   = sqrt(variancePopulation);
     stdDev             = sqrt(variance);
 }
 
-
-
-template<typename ParameterType>
-double ofxDataBuffer<ParameterType>::smooth(double oldValue, ParameterType newValue, double alpha) {
-    return oldValue * (1 - alpha) + newValue * alpha;
-}
-
-
-template<typename ParameterType>
-void ofxDataBuffer<ParameterType>::add(ParameterType v){
+template<typename T>
+void ofxDataBuffer_<T>::push_back(const T& data, bool expand){
     
-    cout << "adding ->" << v << endl;
-    
-    buffer.push_back(v); // buffer it
-    
-    bufferOrdered.push_back(v);
-    
-    if(!bufferSmoothed.empty()) {
-        bufferSmoothed.push_back(smooth(bufferSmoothed[bufferSmoothed.size()-1],v,smoothAlpha));
-    } else {
-        bufferSmoothed.push_back(v);
-    }
+    buffer.push_back(data); // buffer it
 
-    if(buffer.size() > count) {
-        bufferOrdered.erase(lower_bound(bufferOrdered.begin(), bufferOrdered.end(), buffer.front())); 
+    if(buffer.size() > maxSize) {
         buffer.erase(buffer.begin()); // remove the last one
-        bufferSmoothed.erase(bufferSmoothed.begin());
     }
-    wasCaclulated = false;
+    
+    statsValid = false;
 }
 
-template<typename ParameterType>
-ParameterType ofxDataBuffer<ParameterType>::getMin(){
+template<typename T>
+void ofxDataBuffer_<T>::push_back(const vector<T>& data, bool expand) {
+    for(int i = 0; i < (int)data.size(); i++) push_back(data[i], expand);
+}
+
+
+template<typename T>
+void ofxDataBuffer_<T>::push_back(T* data, int length, bool expand) {
+    for(int i = 0; i < length; i++) push_back(data[i], expand);
+}
+
+template<typename T>
+void ofxDataBuffer_<T>::setMaxSize(size_t _maxSize) {
+    maxSize = _maxSize;
+
+    // will remove values on next
+    while(buffer.size() > maxSize) {
+        buffer.erase(buffer.begin()); // remove the last one
+        statsValid = false;
+    }
+}
+
+template<typename T>
+size_t ofxDataBuffer_<T>::getMaxSize() {
+    return maxSize;
+}
+
+template<typename T>
+size_t ofxDataBuffer_<T>::getSize() {
+    return buffer.size();
+}
+
+template<typename T>
+T ofxDataBuffer_<T>::getMin(){
     calcStats();
     return minimum;
 }
 
-template<typename ParameterType>
-ParameterType ofxDataBuffer<ParameterType>::getMax(){
+template<typename T>
+T ofxDataBuffer_<T>::getMax(){
     calcStats();
     return maximum;
 }
 
-template<typename ParameterType>
-double ofxDataBuffer<ParameterType>::getMean(){
+template<typename T>
+double ofxDataBuffer_<T>::getSum(){
+    calcStats();
+    return sum;
+}
+
+template<typename T>
+double ofxDataBuffer_<T>::getProduct(){
+    calcStats();
+    return product;
+}
+
+template<typename T>
+double ofxDataBuffer_<T>::getMean(){
     calcStats();
     return mean;
 }
 
-template<typename ParameterType>
-double ofxDataBuffer<ParameterType>::getMedian(){
-
-    sort(bufferOrdered.begin(), bufferOrdered.end()); // sort it
-    
-    if(bufferOrdered.size() % 2 == 0) { // is even
-        // even
-        
-    } else {
-        // odd
-        
-    }
-    
-    
-    return median;
+template<typename T>
+double ofxDataBuffer_<T>::getHarmonicMean(){
+    calcStats();
+    return harmMean;
 }
 
-template<typename ParameterType>
-double ofxDataBuffer<ParameterType>::getVariance(){
+template<typename T>
+double ofxDataBuffer_<T>::getGeometricMean(){
+    calcStats();
+    return geoMean;
+}
+
+template<typename T>
+double ofxDataBuffer_<T>::getMedian(){
+    // median is not cached
+     
+    deque<T> bufferCopy = buffer;
+    size_t size = bufferCopy.size();
+    int    n    = size / 2;
+
+    std::nth_element(bufferCopy.begin(), bufferCopy.begin()+n, bufferCopy.end());
+    double med = bufferCopy[n];
+    
+    if(size % 2 != 0) { // odd
+        return med;
+    } else { // even
+        std::nth_element(bufferCopy.begin(), bufferCopy.begin()+(n - 1), bufferCopy.end());
+        return (med + bufferCopy[n - 1]) / 2.0;
+    }
+}
+
+template<typename T>
+double ofxDataBuffer_<T>::getVariance(){
     calcStats();
     return variance;
 }
 
-template<typename ParameterType>
-double ofxDataBuffer<ParameterType>::getStdDev(){
+template<typename T>
+double ofxDataBuffer_<T>::getStdDev(){
     calcStats();
     return stdDev;
 }
 
-//    ParameterType getHarmonicMean();
-//    ParameterType getGeometricMean();
-//    ParameterType getCorrectedVariance();
-//    ParameterType getCorrectedStandardDeviation();
-//    ParameterType getCoefficientOfVariation();
-//    ParameterType getMeanDeviation();
-//    ParameterType getMedianDeviation();
-//    ParameterType getSkewness();
+template<typename T>
+double ofxDataBuffer_<T>::getPopulationVariance(){
+    calcStats();
+    return variancePopulation;
+}
+
+template<typename T>
+double ofxDataBuffer_<T>::getPopulationStdDev(){
+    calcStats();
+    return stdDevPopulation;
+}
+
+
+typedef ofxDataBuffer_<char>   ofxCharDataBuffer;
+typedef ofxDataBuffer_<float>  ofxFloatDataBuffer;
+typedef ofxDataBuffer_<float>  ofxDataBuffer;
+typedef ofxDataBuffer_<double> ofxDoubleDataBuffer;
+typedef ofxDataBuffer_<int>    ofxIntDataBuffer;
+typedef ofxDataBuffer_<long>   ofxLongDataBuffer;
+
+// http://stackoverflow.com/questions/3903538/online-algorithm-for-calculating-absolute-deviation
+// http://www.johndcook.com/standard_deviation.html
+// http://stackoverflow.com/questions/1058813/on-line-iterator-algorithms-for-estimating-statistical-median-mode-skewnes
+// http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+// http://www.codecogs.com/code/statistics/moments/statistics.php //rt
+// http://www.codecogs.com/code/statistics/moments/index.php
+
