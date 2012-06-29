@@ -1,7 +1,7 @@
 ofxSparklines
 ==============
 
-![Screenshot](https://github.com/bakercp/ofxSparklines/blob/master/screen.png)
+![Screenshot](https://github.com/bakercp/ofxSparklines/raw/master/screen.png)
 
 A small library for creating sparkline graphs.
 
