@@ -7,6 +7,6 @@ Sparklines are "small, high resolution graphics embedded in a context of words, 
 
 http://en.wikipedia.org/wiki/Sparkline
 
-Requres the demo requires: 
+The demo requires: 
 
 openFrameworks https://github.com/openframeworks/openFrameworks 
