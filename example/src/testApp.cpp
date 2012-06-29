@@ -19,7 +19,7 @@ void testApp::setup(){
     // ----
     settings = ofxSparkline::Settings();
     settings.annotations.label.display = true;
-    settings.annotations.label.text = "{V} Data w/ High Precision";
+    settings.annotations.label.text = "{V} Data w/ High Precision"; // {V} will be replaced with the last value in the buffer
     settings.annotations.label.precision = 5;
     customized.push_back(ofxSparkline(settings,100));
     x2.push_back(ofRandom(100));
@@ -167,12 +167,15 @@ void testApp::setup(){
 
 //--------------------------------------------------------------
 void testApp::update() {
+    
+    // add some random (but kind of smooth) data to the data buffer
     for(int i = 0; i < x.size(); i++) {
         x[i]+=ofRandom(.001,.1);
         float f = ofNoise(x[i]);
         sparkLines[i].push_back(f);
     }
     
+    // add some random (but kind of smooth) data to the data buffer
     for(int i = 0; i < x2.size(); i++) {
         x2[i]+=ofRandom(.001,.1);
         float f = ofNoise(x2[i]);
@@ -183,8 +186,7 @@ void testApp::update() {
 
 //--------------------------------------------------------------
 void testApp::draw(){
-    
-    
+
     
     ofBackground(255);
     float padX = 5;

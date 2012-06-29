@@ -22,10 +22,9 @@ public:
     void mouseReleased(int x, int y, int button);
     void resized(int w, int h);
     
-    vector<float>        x;
-    vector<float>        x2;
+    vector<float>        x; // noise coordinate for sparklines
+    vector<float>        x2; // noise coordinate for customized sparklines
     vector<ofxSparkline> sparkLines;
-    
     vector<ofxSparkline> customized;
     
     
