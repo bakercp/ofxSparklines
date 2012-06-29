@@ -5,9 +5,11 @@
 //  Created by Christopher Baker on 6/15/12.
 //  Copyright (c) 2012 School of the Art Institute of Chicago. All rights reserved.
 //
+//  TODO: refactor into generic ofxPlot type?
 
 #pragma once
 
+#include "ofMain.h"
 #include "ofxDataBuffer.h"
 #include "ofRange.h"
 
@@ -15,13 +17,6 @@ enum ofxSparklineType {
 	OFX_SPARKLINE_TYPE_LINE,
 	OFX_SPARKLINE_TYPE_GRADIENT,
 };
-
-enum ofxSparklineRangeType {
-	OFX_SPARKLINE_RANGE_TYPE_NORMAL     = 0,
-	OFX_SPARKLINE_RANGE_TYPE_CLAMP      = 1,
-    OFX_SPARKLINE_RANGE_TYPE_NORMALIZE  = 2
-};
-
 
 enum ofxPointType {
     OFX_POINT_TYPE_ELLIPSE    = 0,
@@ -37,20 +32,12 @@ public:
 class ofxStrokeFillStyle {
 public:
     ofxStrokeFillStyle() {
-        strokeDef.bFill = false;
-        fillDef.bFill   = true;
+        stroke.bFill = false;
+        fill.bFill   = true;
     }
-    ofxStyle   strokeDef;
-    ofxStyle   fillDef;
+    ofxStyle   stroke;
+    ofxStyle   fill;
 };
-
-//class ofxStyledRectangle : public ofRectangle {
-//    
-//};
-//
-//class ofxStyledEllipse : public ofRectangle {
-//        
-//};
 
 
 class ofxPointStyle : public ofxStrokeFillStyle {
@@ -58,36 +45,48 @@ public:
     ofxPointStyle() : ofxStrokeFillStyle() {
         width            = 3;
         height           = 3;
-        type             = OFX_POINT_TYPE_ELLIPSE;
-        strokeDef.render = OF_RECTMODE_CENTER;
-        fillDef.render   = OF_RECTMODE_CENTER;
+        type             = OFX_POINT_TYPE_RECT;
+        
+        stroke.render    = true;
+        stroke.rectMode  = OF_RECTMODE_CENTER;
+        fill.render      = true;
+        fill.rectMode    = OF_RECTMODE_CENTER;
+        render           = true;
     }
     
     virtual ~ofxPointStyle() {}
     
+    void draw(const ofPoint& p) {
+        draw(p.x,p.y);
+    }
+    
     void draw(float x, float y) {
-        if(!strokeDef.render || !fillDef.render) return;
+        if(!render || (!stroke.render && !fill.render)) return;
 
         ofPushStyle();
         
         if(type == OFX_POINT_TYPE_ELLIPSE) {
-            if(fillDef.render) {
-                ofSetStyle(fillDef);
+            ofPushStyle();
+            if(fill.render) {
+                ofSetStyle(fill);
                 ofEllipse(x,y,width,height);
             }
-            if(strokeDef.render) {
-                ofSetStyle(strokeDef);
+            if(stroke.render) {
+                ofSetStyle(stroke);
                 ofEllipse(x,y,width,height);
             }
+            ofPopStyle();
         } else if(type == OFX_POINT_TYPE_RECT) {
-            if(fillDef.render) {
-                ofSetStyle(fillDef);
+            ofPushStyle();
+            if(fill.render) {
+                ofSetStyle(fill);
                 ofRect(x,y,width,height);
             }
-            if(strokeDef.render) {
-                ofSetStyle(strokeDef);
+            if(stroke.render) {
+                ofSetStyle(stroke);
                 ofRect(x,y,width,height);
             }
+            ofPopStyle();
         }
 
         ofPopStyle();
@@ -96,21 +95,24 @@ public:
     float width;
     float height;
     
+    bool render;
+    
     ofxPointType type;
 };
 
 
-template<typename T>
-class ofxSparkline_ : public ofxDataBuffer_<T>, ofBaseDraws {
+class ofxSparkline : public ofxDataBuffer, public ofBaseDraws {
 public:
     
     struct Settings;
 
-    ofxSparkline_();
-    ofxSparkline_(size_t size);
-    ofxSparkline_(Settings settings, size_t size = 100);
-    virtual ~ofxSparkline_();
-    
+    ofxSparkline();
+    ofxSparkline(size_t size);
+    ofxSparkline(Settings settings, size_t size = 100);
+    virtual ~ofxSparkline();
+
+    void setSettings(Settings _settings);
+
 	void draw(float x, float y);
 	void draw(float x, float y, float w, float h);
 
@@ -126,113 +128,44 @@ public:
 		Settings();
         
         bool                normalRangeSet;
-        ofRange_<T>         normalRange;
-        ofxStrokeFillStyle  normalRangeStyle;
+        ofRange             normalRange;
         
-        ofxSparklineRangeType   displayRangeType;
-        ofRange_<T>             displayRange;
-         
-        ofxStyle            lineStyle;
+        bool                xInvert;
         
-        ofxStrokeFillStyle  frameStyle;
+        bool                yAutoScale;
+        ofRange             yRange;
+        bool                yClip;
+        bool                yInvert;
         
-        ofxPointStyle       lastPointStyle;        
-        ofxPointStyle       firstPointStyle;        
-        ofxPointStyle       maxPointStyle;        
-        ofxPointStyle       minPointStyle;  
         
-          
+        
+        struct ofxSparkLineStyles {
+            ofxStyle            line;
+            ofxStyle            underLine;
+            
+            ofxStrokeFillStyle  box;
+            ofxStrokeFillStyle  normalRangeBox;
+            
+            ofxPointStyle       lastPoint;        
+            ofxPointStyle       firstPoint;        
+            ofxPointStyle       localMaxPoint;        
+            ofxPointStyle       localMinPoint;
+            
+            ofxStyle            label;
+
+        };
+
+        ofxSparkLineStyles styles;
+        
     };
     
     Settings settings;
 
 protected:
+    
+    ofPoint bufferToScreen(float x, float y);
+    float   bufferXToScreenX(float x);
+    float   bufferYToScreenY(float y);
+    
 private:
 };
-
-template<typename T>
-ofxSparkline_<T>::ofxSparkline_() {
-    
-}
-
-template<typename T>
-ofxSparkline_<T>::ofxSparkline_(size_t v) : ofxDataBuffer_<T>(v){
-    settings = Settings();
-}
-
-template<typename T>
-ofxSparkline_<T>::ofxSparkline_(Settings _settings, size_t v) : ofxDataBuffer_<T>(v){
-    settings = _settings;
-}
-
-
-template<typename T>
-ofxSparkline_<T>::~ofxSparkline_() {
-}
-
-template<typename T>
-void ofxSparkline_<T>::draw(float x, float y) {
-    draw(x,y,getWidth(),getHeight());
-}
-
-template<typename T>
-void ofxSparkline_<T>::draw(float x, float y, float w, float h) {
-    ofPushStyle();
-    ofPushMatrix();
-    ofTranslate(x,y);
-    
-    ofPushStyle();
-    //ofSetStyle(frameStyle);
-    ofRect(0,0,w,h);
-    ofPopStyle();
-    
-    ofPopMatrix();
-    ofPopStyle();
-}
-
-template<typename T>
-float ofxSparkline_<T>::getWidth() {
-    return settings.width;
-}
-
-template<typename T>
-float ofxSparkline_<T>::getHeight() {
-    return settings.height;
-}
-
-template<typename T>
-ofxSparkline_<T>::Settings::Settings() {
-    width  = 20.0;
-    height = 50.0;
-    title  = "";
-    font   = NULL;
-    
-    normalRangeSet   = false;
-//    normalRange      = ofRange_<T>();
-//    normalRangeStyle = ofColor(0,80);
-    
-//    displayRangeType = 
-    
-//    bool displayRangeSet;
-//    ofRange_<T> displayRange;
-    
-//    lineStyle;
-//    frameStyle;
-    
-//    lastPointDef;        
-//    firstPointDef;        
-//    maxPointDef;        
-//    minPointDef;        
-
-}
-
-typedef ofxSparkline_<char>   ofxCharSparkline;
-typedef ofxSparkline_<float>  ofxFloatSparkline;
-typedef ofxSparkline_<float>  ofxSparkline;
-typedef ofxSparkline_<double> ofxDoubleSparkline;
-typedef ofxSparkline_<int>    ofxIntSparkline;
-typedef ofxSparkline_<long>   ofxLongSparkline;
-
-
-
-
