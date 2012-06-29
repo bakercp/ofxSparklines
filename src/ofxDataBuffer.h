@@ -35,8 +35,8 @@ public:
     void calcStats();
     bool statsValid;
     
-    T      getNewest();
-    T      getOldest();
+    T      getLast();
+    T      getFirst();
     
     T      getMin();
 	T      getMax();
@@ -244,12 +244,12 @@ size_t ofxDataBuffer_<T>::getSize() {
 
 
 template<typename T>
-T ofxDataBuffer_<T>::getNewest(){
+T ofxDataBuffer_<T>::getLast(){
     return buffer[getSize()-1];
 }
 
 template<typename T>
-T ofxDataBuffer_<T>::getOldest(){
+T ofxDataBuffer_<T>::getFirst(){
     return buffer[0];
 }
 

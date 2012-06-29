@@ -25,20 +25,22 @@ enum ofxPointType {
 
 class ofxStyle : public ofStyle {
 public:
-    ofxStyle() { render = true; }
-    bool render;
+    ofxStyle() { display = true; }
+    bool display;
 };
+
 
 class ofxStrokeFillStyle {
 public:
     ofxStrokeFillStyle() {
-        stroke.bFill = false;
-        fill.bFill   = true;
+        stroke.display = false;
+        stroke.bFill   = false;
+        fill.display   = true;
+        fill.bFill     = true;
     }
     ofxStyle   stroke;
     ofxStyle   fill;
 };
-
 
 class ofxPointStyle : public ofxStrokeFillStyle {
 public:
@@ -46,60 +48,13 @@ public:
         width            = 3;
         height           = 3;
         type             = OFX_POINT_TYPE_RECT;
-        
-        stroke.render    = true;
         stroke.rectMode  = OF_RECTMODE_CENTER;
-        fill.render      = true;
         fill.rectMode    = OF_RECTMODE_CENTER;
-        render           = true;
     }
-    
-    virtual ~ofxPointStyle() {}
-    
-    void draw(const ofPoint& p) {
-        draw(p.x,p.y);
-    }
-    
-    void draw(float x, float y) {
-        if(!render || (!stroke.render && !fill.render)) return;
-
-        ofPushStyle();
-        
-        if(type == OFX_POINT_TYPE_ELLIPSE) {
-            ofPushStyle();
-            if(fill.render) {
-                ofSetStyle(fill);
-                ofEllipse(x,y,width,height);
-            }
-            if(stroke.render) {
-                ofSetStyle(stroke);
-                ofEllipse(x,y,width,height);
-            }
-            ofPopStyle();
-        } else if(type == OFX_POINT_TYPE_RECT) {
-            ofPushStyle();
-            if(fill.render) {
-                ofSetStyle(fill);
-                ofRect(x,y,width,height);
-            }
-            if(stroke.render) {
-                ofSetStyle(stroke);
-                ofRect(x,y,width,height);
-            }
-            ofPopStyle();
-        }
-
-        ofPopStyle();
-    }
-    
     float width;
     float height;
-    
-    bool render;
-    
     ofxPointType type;
 };
-
 
 class ofxSparkline : public ofxDataBuffer, public ofBaseDraws {
 public:
@@ -120,43 +75,77 @@ public:
 	float getWidth();
     
 	struct Settings {
-		float   width;				
-		float   height;
+        Settings();
         
-        string title;
-        ofTrueTypeFont*     font;
-		Settings();
+        struct Axis {
+            Axis() {invert = false; autoScale = false; clip = true; range = ofRange();}
+            bool    invert;
+            bool    autoScale;
+            bool    clip;
+            ofRange range;
+        };
         
-        bool                normalRangeSet;
-        ofRange             normalRange;
+        struct Axes {
+            Axes() {x = Axis(); y = Axis();}
+            Axis x;
+            Axis y;
+        };
         
-        bool                xInvert;
+        struct Label {
+            //ofTrueTypeFont* labelFont;
+            Label() {
+                display     = true; 
+                text        = "";
+                style.bFill = true;
+                style.color = ofColor(0);
+                precision   = 2;
+            }
+            int      precision;
+            bool     display; 
+            string   text; // {V} is replaced with the last value, number is precision
+            ofxStyle style;
+        };
         
-        bool                yAutoScale;
-        ofRange             yRange;
-        bool                yClip;
-        bool                yInvert;
         
+        struct Marker {
+            bool display;
+            ofxPointStyle style;
+        };
         
+        struct Markers {
+            Marker first;
+            Marker last;
+            Marker min;
+            Marker max;
+        };
         
-        struct ofxSparkLineStyles {
-            ofxStyle            line;
-            ofxStyle            underLine;
-            
-            ofxStrokeFillStyle  box;
-            ofxStrokeFillStyle  normalRangeBox;
-            
-            ofxPointStyle       lastPoint;        
-            ofxPointStyle       firstPoint;        
-            ofxPointStyle       localMaxPoint;        
-            ofxPointStyle       localMinPoint;
-            
-            ofxStyle            label;
-
+        struct StyledRange {
+            bool    display;
+            ofRange range;
+            ofxStrokeFillStyle  style;
+        };
+        
+        struct Annotations {
+            Label label;
+            Markers markers;
+            StyledRange normalRange;
+        };
+        
+        struct CurveStyle {
+            ofxStyle line;
+            ofxStyle area;
+        };
+        
+        struct Style {
+            CurveStyle curve;
+            ofxStrokeFillStyle box;
         };
 
-        ofxSparkLineStyles styles;
-        
+        float       width;
+        float       height;
+        Axes        axes;
+        Annotations annotations;
+        Style       styles;
     };
     
     Settings settings;

@@ -23,6 +23,11 @@ public:
     void resized(int w, int h);
     
     vector<float>        x;
+    vector<float>        x2;
     vector<ofxSparkline> sparkLines;
+    
+    vector<ofxSparkline> customized;
+    
+    
     
 };
