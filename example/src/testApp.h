@@ -1,9 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxDataBuffer.h"
 #include "ofxSparkline.h"
-#include "ofRange.h"
 class testApp : public ofBaseApp{
 
 public:
