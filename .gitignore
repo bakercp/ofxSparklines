@@ -18,3 +18,16 @@ example/obj
 # Win
 *.exe
 *.dll
+*_debug.exe
+*_debug.exp
+*_debug.ilk
+*_debug.lib
+*_debug.pdb
+*.VC.db
+example-vs-win/obj
+example-vs-win/bin/*.exe
+example-vs-win/bin/*.dll
+example-vs-win/bin/*.exp
+example-vs-win/bin/*.lib
+example-vs-win/bin/*.ilk
+example-vs-win/bin/*.pdb
