@@ -1,11 +1,18 @@
 //
-//  ofxSparklines.h
+//  ofxSparkline.h
 //  ofxSparklines
 //
 //  Created by Christopher Baker on 6/15/12.
 //  Copyright (c) 2012 School of the Art Institute of Chicago. All rights reserved.
 //
 //  TODO: refactor into generic ofxPlot type?
+
+/*
+	changes JJJ 2016 11 17
+		- included ofRange.h into src/ from https://github.com/Flightphase/ofxRange/blob/master/src/ofRange.h
+		- commented off public ofBaseDraws it triggers error on VS Win 10:  "cannot instantiate abstract class" error
+		- works now on win 10 VS OF097
+*/
 
 #pragma once
 
@@ -56,7 +63,8 @@ public:
     ofxPointType type;
 };
 
-class ofxSparkline : public ofxDataBuffer, public ofBaseDraws {
+class ofxSparkline : public ofxDataBuffer // , public ofBaseDraws  // <<--- JJJ
+{
 public:
     
     struct Settings;

@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\ofApp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ofxSparklines\src\ofxSparkline.cpp">
+      <Filter>addons\ofxSparklines\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{d8376475-7454-4a24-b08a-aac121d3ad6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons">
+      <UniqueIdentifier>{c5929bd9-e15d-4f6e-911a-a2e1ceb3bc6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\ofxSparklines">
+      <UniqueIdentifier>{d4cc46fe-876d-41ba-8a1e-f3961ad9fc01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\ofxSparklines\src">
+      <UniqueIdentifier>{3dc52c2e-2f26-403a-8106-d77f78641eb3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ofApp.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ofxSparklines\src\ofRange.h">
+      <Filter>addons\ofxSparklines\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ofxSparklines\src\ofxDataBuffer.h">
+      <Filter>addons\ofxSparklines\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ofxSparklines\src\ofxSparkline.h">
+      <Filter>addons\ofxSparklines\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ofxSparklines\src\ofxSparklines_template.h">
+      <Filter>addons\ofxSparklines\src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="icon.rc" />
+  </ItemGroup>
+</Project>
